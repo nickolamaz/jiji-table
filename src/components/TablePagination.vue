@@ -26,6 +26,10 @@ export default {
     pageSize: {
       type: Number,
       required: true,
+    },
+    disabled: {
+      type: Boolean,
+      required: true,
     }
   },
   data() {
@@ -51,6 +55,9 @@ export default {
           .map((_, idx) => (idx + 1));
     },
     goToPage(num) {
+      if (this.disabled) {
+        return;
+      }
       this.currentPage = num;
       this.$emit('goToPage', num);
     }

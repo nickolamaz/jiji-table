@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div>
+    <div class="margin-bottom-20">
       <label for="search">Search:</label>
-      <input type="text" id="search" v-model="querySearch">
+      <input type="text" id="search" class="form-control block-inline" v-model="querySearch" :disabled="isTableEditing">
     </div>
     <table v-if="tableData && tableHeaders">
       <thead>
@@ -19,15 +19,17 @@
             ></i>
           </span>
         </th>
+        <th>
+          Actions
+        </th>
       </tr>
       </thead>
-      <tbody>
-      <tr v-for="(tableRow, idx) in paginatedTableRows" :key="idx">
-        <td v-for="(tableCol, idx2) in tableHeaders" :key="idx2">
-          {{getCellContent(tableRow, tableCol)}}
-        </td>
-      </tr>
-      </tbody>
+      <table-body
+          :paginated-table-rows="paginatedTableRows"
+          :table-headers="tableHeaders"
+          @isEditing="handleEditEvent"
+      >
+      </table-body>
     </table>
     <div v-else>
       No table data provided
@@ -36,6 +38,7 @@
         ref="tablePaginationRef"
         :page-limit="sortedTableDataRows.length"
         :page-size="pageSize"
+        :disabled="isTableEditing"
         @goToPage="goToPageHandler"
     >
     </table-pagination>
@@ -45,10 +48,11 @@
 <script>
 import initialJsonData from '@/const/initial-data.json';
 import TablePagination from '@/components/TablePagination';
+import TableBody from '@/components/TableBody';
 
 export default {
   name: 'TableWrapper',
-  components: { TablePagination },
+  components: { TableBody, TablePagination },
   props: {
     tableData: {
       type: Object,
@@ -69,6 +73,7 @@ export default {
       querySearch: null,
       pageStartIndex: 0,
       sortReverse: false,
+      isTableEditing: false,
       sortKey: '',
     }
   },
@@ -123,9 +128,6 @@ export default {
       });
       this.$set(this.tableData, 'items', updatedItems.slice());
     },
-    getCellContent(row, col) {
-      return row[col.code];
-    },
     goToPageHandler(event) {
       this.pageStartIndex = event * this.pageSize - this.pageSize;
     },
@@ -141,6 +143,13 @@ export default {
         }
         return Object.keys(i).some(k => i[k].toString().toLowerCase().includes(this.querySearch.toLowerCase()));
       });
+    },
+    handleEditEvent(event) {
+      this.isTableEditing = event.state;
+      // Update edited row using id
+      if (!event.state && event.rowData) {
+        this.$set(this.tableData.items, event.rowData.id, event.rowData);
+      }
     }
   }
 }
